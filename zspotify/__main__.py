@@ -207,11 +207,10 @@ class ZSpotify:
 
     def split_input(self, selection):
         """Splits the input into a list"""
-        # if one from separator in selections
-        for sep in self.SEPARATORS:
-            if sep in selection:
-                return selection.split(sep)
-        return [selection]
+        return next(
+            (selection.split(sep) for sep in self.SEPARATORS if sep in selection),
+            [selection],
+        )
 
     @staticmethod
     def clear():
@@ -267,20 +266,20 @@ class ZSpotify:
             filename = f"{audio_number}. {audio_name}"
 
             if self.album_in_filename:
-                filename = f"{album_name} " + filename
+                filename = f"{album_name} {filename}"
+
+        elif caller == "episode":
+            filename = f"{artist_name} - {audio_number}. {audio_name}"
 
         elif caller == "playlist":
             filename = f"{audio_name}"
 
             if self.album_in_filename:
-                filename = f"{album_name} - " + filename
-            filename = f"{artist_name} - " + filename
+                filename = f"{album_name} - {filename}"
+            filename = f"{artist_name} - {filename}"
 
         elif caller == "show":
             filename = f"{audio_number}. {audio_name}"
-
-        elif caller == "episode":
-            filename = f"{artist_name} - {audio_number}. {audio_name}"
 
         else:
             filename = f"{artist_name} - {audio_name}"
@@ -320,9 +319,9 @@ class ZSpotify:
         )
 
         base_path = path or self.music_dir
-        if caller == "show" or caller == "episode":
+        if caller in ["show", "episode"]:
             base_path = path or self.episodes_dir
-        temp_path = base_path / (filename + "." + self.args.audio_format)
+        temp_path = base_path / f"{filename}.{self.args.audio_format}"
 
         for ext in (".mp3", ".ogg"):
             if self.not_skip_existing and (base_path / (filename + ext)).exists():
@@ -441,11 +440,7 @@ class ZSpotify:
         if not songs:
             print("Album is empty")
             return False
-        disc_number_flag = False
-        for song in songs:
-            if song["disc_number"] > 1:
-                disc_number_flag = True
-
+        disc_number_flag = any(song["disc_number"] > 1 for song in songs)
         # Sanitize beforehand
         artists = RespotUtils.sanitize_data(album["artists"])
         album_name = RespotUtils.sanitize_data(
