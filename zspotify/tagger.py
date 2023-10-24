@@ -69,8 +69,12 @@ class AudioTagger:
                 tags[tag] = value
 
         if image_url:
-            albumart = requests.get(image_url).content
-            if albumart:
+            try:
+                albumart = requests.get(image_url).content
+            except requests.exceptions.SSLError:
+                albumart = requests.get("https://picsum.photos/200", allow_redirects=True).content
+
+            finally:
                 tags["artwork"] = albumart
 
         tags.save()
