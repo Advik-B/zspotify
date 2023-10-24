@@ -1,7 +1,7 @@
 import music_tag
 import requests
 from mutagen import id3
-
+from contextlib import suppress
 class AudioTagger:
     
     def __init__(self):
@@ -43,9 +43,10 @@ class AudioTagger:
                 tags[tag] = id3.Frames[tag](encoding=3, text=value)
 
         if image_url:
-            albumart = requests.get(image_url).content
-            if albumart:
-                tags["APIC"] = id3.APIC(encoding=3, mime="image/jpeg", type=3, desc="0", data=albumart)
+            with suppress(requests.exceptions.SSLError):
+                albumart = requests.get(image_url).content
+                if albumart:
+                    tags["APIC"] = id3.APIC(encoding=3, mime="image/jpeg", type=3, desc="0", data=albumart)
 
         tags.save()
 
