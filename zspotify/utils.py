@@ -55,7 +55,7 @@ class Archive:
         archive = []
         folder = old_archive_file.parent
         with open(old_archive_file, "r", encoding="utf-8") as f:
-            for line in f.readlines():
+            for line in f:
                 song = line.split("\t")
                 try:
                     track_id, timestamp, artist, track_name, file_name = song
@@ -113,11 +113,11 @@ class FormatUtils:
     BLUE = "\033[34m"
     RESET = "\033[0m"
 
-    def sanitize_data(value: str) -> str:
+    def sanitize_data(self) -> str:
         """Returns the string with problematic characters removed."""
         SANITIZE_CHARS = ["\\", "/", ":", "*", "?", "'", "<", ">", '"', "|"]
 
         for char in SANITIZE_CHARS:
-            value = value.replace(char, "" if char != "|" else "-")
-        return value
+            self = self.replace(char, "" if char != "|" else "-")
+        return self
 

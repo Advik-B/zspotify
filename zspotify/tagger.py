@@ -34,7 +34,9 @@ class AudioTagger:
             "TDOR": release_year,
             "TPOS": str(disc_number) if disc_number else None,
             "TRCK": str(track_number) if track_number else None,
-            "COMM": "https://open.spotify.com/track/" + track_id_str if track_id_str else None,
+            "COMM": f"https://open.spotify.com/track/{track_id_str}"
+            if track_id_str
+            else None,
             "TPE2": album_artist,
         }
 
@@ -44,9 +46,9 @@ class AudioTagger:
 
         if image_url:
             with suppress(requests.exceptions.SSLError):
-                albumart = requests.get(image_url).content
-                if albumart:
+                if albumart := requests.get(image_url).content:
                     tags["APIC"] = id3.APIC(encoding=3, mime="image/jpeg", type=3, desc="0", data=albumart)
+
 
         tags.save()
 
@@ -61,7 +63,9 @@ class AudioTagger:
             "year": release_year,
             "discnumber": str(disc_number) if disc_number else None,
             "tracknumber": track_number,
-            "comment": "https://open.spotify.com/track/" + track_id_str if track_id_str else None
+            "comment": f"https://open.spotify.com/track/{track_id_str}"
+            if track_id_str
+            else None,
         }
 
         for tag, value in other_map.items():
@@ -69,6 +73,7 @@ class AudioTagger:
                 tags[tag] = value
 
         if image_url:
+
             try:
                 albumart = requests.get(image_url).content
             except requests.exceptions.SSLError:

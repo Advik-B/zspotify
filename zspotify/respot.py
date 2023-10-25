@@ -55,12 +55,12 @@ class Respot:
             print(f"Saving {output_path.stem} directly")
             handler.bytes_to_file(audio_bytes, output_path)
         elif extension == "source":
-            output_str = filename + "." + audio_bytes_format
+            output_str = f"{filename}.{audio_bytes_format}"
             output_path = temp_path.parent / output_str
             print(f"Saving {filename} as {extension}")
             handler.bytes_to_file(audio_bytes, output_path)
         else:
-            output_str = filename + "." + extension
+            output_str = f"{filename}.{extension}"
             output_path = temp_path.parent / output_str
             print(f"Converting {filename} to {extension}")
             handler.convert_audio_format(audio_bytes, output_path)
@@ -173,18 +173,14 @@ class RespotRequest:
         try:
             info = json.loads(
                 self.authorized_get_request(
-                    "https://api.spotify.com/v1/tracks?ids="
-                    + track_id
-                    + "&market=from_token"
+                    f"https://api.spotify.com/v1/tracks?ids={track_id}&market=from_token"
                 ).text
             )
 
-            # Sum the size of the images, compares and saves the index of the
-            # largest image size
-            sum_total = []
-            for sum_px in info["tracks"][0]["album"]["images"]:
-                sum_total.append(sum_px["height"] + sum_px["width"])
-
+            sum_total = [
+                sum_px["height"] + sum_px["width"]
+                for sum_px in info["tracks"][0]["album"]["images"]
+            ]
             img_index = sum_total.index(max(sum_total)) if sum_total else -1
 
             artist_id = info["tracks"][0]["artists"][0]["id"]
@@ -245,16 +241,15 @@ class RespotRequest:
                 params={"limit": limit, "offset": offset},
             ).json()
             offset += limit
-            for song in resp["items"]:
-                if song["track"] is not None:
-                    audios.append(
-                        {
-                            "id": song["track"]["id"],
-                            "name": song["track"]["name"],
-                            "artist": song["track"]["artists"][0]["name"],
-                        }
-                    )
-
+            audios.extend(
+                {
+                    "id": song["track"]["id"],
+                    "name": song["track"]["name"],
+                    "artist": song["track"]["artists"][0]["name"],
+                }
+                for song in resp["items"]
+                if song["track"] is not None
+            )
             if len(resp["items"]) < limit:
                 break
         return audios
@@ -287,16 +282,15 @@ class RespotRequest:
                 },
             ).json()
             offset += limit
-            for song in resp["items"]:
-                audios.append(
-                    {
-                        "id": song["id"],
-                        "name": song["name"],
-                        "number": song["track_number"],
-                        "disc_number": song["disc_number"],
-                    }
-                )
-
+            audios.extend(
+                {
+                    "id": song["id"],
+                    "name": song["name"],
+                    "number": song["track_number"],
+                    "disc_number": song["disc_number"],
+                }
+                for song in resp["items"]
+            )
             if len(resp["items"]) < limit:
                 break
 
@@ -308,10 +302,9 @@ class RespotRequest:
             f"https://api.spotify.com/v1/albums/{album_id}"
         ).json()
 
-        artists = []
-        for artist in resp["artists"]:
-            artists.append(RespotUtils.sanitize_data(artist["name"]))
-
+        artists = [
+            RespotUtils.sanitize_data(artist["name"]) for artist in resp["artists"]
+        ]
         if match := re.search("(\\d{4})", resp["release_date"]):
             return {
                 "artists": RespotUtils.conv_artist_format(artists),
@@ -376,15 +369,14 @@ class RespotRequest:
                 params={"limit": limit, "offset": offset},
             ).json()
             offset += limit
-            for song in resp["items"]:
-                songs.append(
-                    {
-                        "id": song["track"]["id"],
-                        "name": song["track"]["name"],
-                        "artist": song["track"]["artists"][0]["name"],
-                    }
-                )
-
+            songs.extend(
+                {
+                    "id": song["track"]["id"],
+                    "name": song["track"]["name"],
+                    "artist": song["track"]["artists"][0]["name"],
+                }
+                for song in resp["items"]
+            )
             if len(resp["items"]) < limit:
                 break
 
@@ -396,7 +388,7 @@ class RespotRequest:
         try:
             info = json.loads(
                 self.authorized_get_request(
-                    "https://api.spotify.com/v1/artists/" + artist_id
+                    f"https://api.spotify.com/v1/artists/{artist_id}"
                 ).text
             )
 
@@ -412,15 +404,12 @@ class RespotRequest:
     def get_episode_info(self, episode_id_str):
         info = json.loads(
             self.authorized_get_request(
-                "https://api.spotify.com/v1/episodes/" + episode_id_str
+                f"https://api.spotify.com/v1/episodes/{episode_id_str}"
             ).text
         )
         if not info:
             return None
-        sum_total = []
-        for sum_px in info["images"]:
-            sum_total.append(sum_px["height"] + sum_px["width"])
-
+        sum_total = [sum_px["height"] + sum_px["width"] for sum_px in info["images"]]
         img_index = sum_total.index(max(sum_total)) if sum_total else -1
 
         return {
@@ -450,15 +439,14 @@ class RespotRequest:
                 params={"limit": limit, "offset": offset},
             ).json()
             offset += limit
-            for episode in resp["items"]:
-                episodes.append(
-                    {
-                        "id": episode["id"],
-                        "name": episode["name"],
-                        "release_date": episode["release_date"],
-                    }
-                )
-
+            episodes.extend(
+                {
+                    "id": episode["id"],
+                    "name": episode["name"],
+                    "release_date": episode["release_date"],
+                }
+                for episode in resp["items"]
+            )
             if len(resp["items"]) < limit:
                 break
 
@@ -493,10 +481,7 @@ class RespotRequest:
         tracks = resp.json()["tracks"]["items"]
         if len(tracks) > 0:
             for track in tracks:
-                if track["explicit"]:
-                    explicit = "[E]"
-                else:
-                    explicit = ""
+                explicit = "[E]" if track["explicit"] else ""
                 ret_tracks.append(
                     {
                         "id": track["id"],
@@ -524,29 +509,25 @@ class RespotRequest:
                     }
                 )
 
-        ret_playlists = []
         playlists = resp.json()["playlists"]["items"]
-        for playlist in playlists:
-            ret_playlists.append(
-                {
-                    "name": playlist["name"],
-                    "owner": playlist["owner"]["display_name"],
-                    "total_tracks": playlist["tracks"]["total"],
-                    "id": playlist["id"],
-                }
-            )
-
-        ret_artists = []
+        ret_playlists = [
+            {
+                "name": playlist["name"],
+                "owner": playlist["owner"]["display_name"],
+                "total_tracks": playlist["tracks"]["total"],
+                "id": playlist["id"],
+            }
+            for playlist in playlists
+        ]
         artists = resp.json()["artists"]["items"]
-        for artist in artists:
-            ret_artists.append(
-                {
-                    "name": artist["name"],
-                    "genres": "/".join(artist["genres"]),
-                    "id": artist["id"],
-                }
-            )
-
+        ret_artists = [
+            {
+                "name": artist["name"],
+                "genres": "/".join(artist["genres"]),
+                "id": artist["id"],
+            }
+            for artist in artists
+        ]
         # TODO: Add search in episodes and shows
 
         if (
@@ -641,10 +622,7 @@ class RespotTrackHandler:
         # Make sure stream is at the start or else AudioSegment will act up
         audio_bytes.seek(0)
 
-        bitrate = "160k"
-        if self.quality == AudioQuality.VERY_HIGH:
-            bitrate = "320k"
-
+        bitrate = "320k" if self.quality == AudioQuality.VERY_HIGH else "160k"
         AudioSegment.from_file(audio_bytes).export(
             output_path, format=self.format, bitrate=bitrate
         )
