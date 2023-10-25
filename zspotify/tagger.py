@@ -1,7 +1,7 @@
 import music_tag
 import requests
 from mutagen import id3
-
+from contextlib import suppress
 class AudioTagger:
     
     def __init__(self):
@@ -45,8 +45,10 @@ class AudioTagger:
                 tags[tag] = id3.Frames[tag](encoding=3, text=value)
 
         if image_url:
-            if albumart := requests.get(image_url).content:
-                tags["APIC"] = id3.APIC(encoding=3, mime="image/jpeg", type=3, desc="0", data=albumart)
+            with suppress(requests.exceptions.SSLError):
+                if albumart := requests.get(image_url).content:
+                    tags["APIC"] = id3.APIC(encoding=3, mime="image/jpeg", type=3, desc="0", data=albumart)
+
 
         tags.save()
 
@@ -71,7 +73,13 @@ class AudioTagger:
                 tags[tag] = value
 
         if image_url:
-            if albumart := requests.get(image_url).content:
+
+            try:
+                albumart = requests.get(image_url).content
+            except requests.exceptions.SSLError:
+                albumart = requests.get("https://picsum.photos/200", allow_redirects=True).content
+
+            finally:
                 tags["artwork"] = albumart
 
         tags.save()

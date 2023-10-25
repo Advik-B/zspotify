@@ -23,7 +23,7 @@ Install ZSpotify using either [pip](#pip) or [Docker](#docker)
 2. **Install ZSpotify:**
 
 ```bash
-pip install git+https://github.com/jsavargas/zspotify
+pip install git+https://github.com/advik-b/zspotify
 ```
 
 ### Docker
